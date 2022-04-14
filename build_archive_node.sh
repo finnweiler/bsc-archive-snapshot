@@ -34,7 +34,7 @@ S3_BUCKET_PATH="s3://public-blockchain-snapshots"
 # Install go
 curl -O https://storage.googleapis.com/golang/go1.18.1.linux-arm64.tar.gz
 tar -C /usr/local -xzf go1.18.1.linux-arm64.tar.gz
-echo "export PATH=$PATH:/usr/local/go/bin" >> $HOME/.profile
+echo "export PATH=\$PATH:/usr/local/go/bin" >> $HOME/.profile
 source $HOME/.profile
 
 # Basic installs.
