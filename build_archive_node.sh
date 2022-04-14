@@ -31,9 +31,15 @@ S3_BUCKET_PATH="s3://public-blockchain-snapshots"
 # You may also set this through an environmental variable at startup.
 # SHOULD_AUTO_UPLOAD_SNAPSHOT="0"
 
+# Install go
+curl -O https://storage.googleapis.com/golang/go1.18.1.linux-arm64.tar.gz
+tar -C /usr/local -xzf go1.18.1.linux-arm64.tar.gz
+echo "export PATH=$PATH:/usr/local/go/bin" >> .profile
+source .profile
+
 # Basic installs.
 apt update
-apt install -y awscli zfsutils-linux golang-go pv docker docker-compose clang-12 make
+apt install -y awscli zfsutils-linux pv docker docker-compose clang-12 make
 
 # Creates a new pool with the default device.
 DEVICES=( $(lsblk -o NAME,MODEL | grep NVMe | cut -d' ' -f 1) )
@@ -112,32 +118,3 @@ XDG_DATA_HOME=/erigon/data docker-compose create
 # You may follow the stdout/stderr of erigon services with:
 # sudo docker-compose logs -f
 XDG_DATA_HOME=/erigon/data docker-compose up -d
-
-# Create script that can be used to upload a snapshot quickly.
-cat <<EOT > /home/ubuntu/create-bsc-snapshot.sh
-set -ex
-# Just in case delete clone (if exists).
-zfs destroy tank/erigon_upload || true
-zfs destroy tank/erigon_data@snap || true
-
-# First stop erigon and take a snapshot of drive.
-cd /erigon/erigon
-docker-compose stop
-zfs snap tank/erigon_data@snap
-docker-compose start
-
-# Clone drive and upload clone data and then delete clone
-zfs clone -o mountpoint=/erigon_upload tank/erigon_data@snap tank/erigon_upload
-cd /erigon_upload
-tar c ./ | /zstd/zstd -v -T0 -6 | aws s3 cp - $S3_BUCKET_PATH/bsc/erigon-latest.tar.zstd --expected-size 4900000000000
-cd /
-zfs destroy tank/erigon_upload
-zfs destroy tank/erigon_data@snap
-EOT
-
-# If we are configured to auto upload a snapshot configure crontab.
-if [[ "${SHOULD_AUTO_UPLOAD_SNAPSHOT:-}" == "1" ]]; then
-  echo '@daily root /home/ubuntu/create-bsc-snapshot.sh' >> /etc/crontab
-  chmod +x /home/ubuntu/create-bsc-snapshot.sh
-  service cron reload
-fi
