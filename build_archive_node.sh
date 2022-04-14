@@ -73,7 +73,7 @@ ln -s /zstd/zstd-1.5.2/zstd /zstd/zstd
 # Download, setup and install bsc-geth.
 zfs create -o mountpoint=/erigon tank/erigon
 cd /erigon
-git clone https://github.com/ledgerwatch/erigon.git
+git clone https://github.com/finnweiler/erigon.git
 
 # Modify docker-compose to start with "--chain bsc" argument.
 sed -i 's/command: erigon /command: erigon --chain bsc /g' /erigon/erigon/docker-compose.yml
